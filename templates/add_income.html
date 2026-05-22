@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Add Income</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+    <div class="navbar">
+
+    <h2>Smart Finance Tracker</h2>
+
+    <div class="nav-links">
+        <a href="/dashboard">Home</a>
+        <a href="/add-expense">Add Expense</a>
+        <a href="/add-income">Add Income</a>
+        <a href="/history">History</a>
+    </div>
+
+</div>
+
+    <div class="form-container">
+
+        <h1>Add Income</h1>
+
+        <form method="POST">
+
+            <input type="text" name="source" placeholder="Income Source">
+
+            <input type="number" name="amount" placeholder="Enter Amount">
+
+            <input type="date" name="income_date">
+
+            <button type="submit">Save Income</button>
+
+        </form>
+
+    </div>
+
+</body>
+</html>

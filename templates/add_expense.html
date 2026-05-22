@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Add Expense</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+    <div class="navbar">
+
+    <h2>Smart Finance Tracker</h2>
+
+    <div class="nav-links">
+        <a href="/dashboard">Home</a>
+        <a href="/add-expense">Add Expense</a>
+        <a href="/add-income">Add Income</a>
+        <a href="/history">History</a>
+    </div>
+
+</div>
+
+    <div class="form-container">
+
+        <h1>Add Expense</h1>
+
+        <form method="POST">
+
+    <input type="text" name="title" placeholder="Enter Expense Title">
+
+    <select name="category">
+        <option>Food</option>
+        <option>Petrol</option>
+        <option>Groceries</option>
+        <option>Shopping</option>
+        <option>Bills</option>
+    </select>
+
+    <input type="number" name="amount" placeholder="Enter Amount">
+
+    <<input type="date"
+       name="expense_date"
+       value="{{ selected_date }}">
+
+    <button type="submit">Save Expense</button>
+    {% if success %}
+
+<p style="color:green; text-align:center;">
+    {{ success }}
+</p>
+
+{% endif %}
+
+</form>
+    </div>
+
+</body>
+</html>

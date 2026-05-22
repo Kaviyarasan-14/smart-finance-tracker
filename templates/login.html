@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<div class="form-container">
+
+    <h1>Login</h1>
+
+    <form method="POST">
+
+        <input type="text" name="username" placeholder="Enter Username">
+
+        <input type="password" name="password" placeholder="Enter Password">
+
+        <button type="submit">Login</button>
+        {% if error %}
+
+    <p style="color:red; text-align:center;">
+        {{ error }}
+    </p>
+
+{% endif %}
+
+    </form>
+    <p style="margin-top:20px; text-align:center;">
+
+    New User?
+
+    <a href="/register">Create Account</a>
+
+</p>
+
+</div>
+
+</body>
+</html>

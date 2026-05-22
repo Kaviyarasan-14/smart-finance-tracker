@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Expense History</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+    <div class="navbar">
+
+    <h2>Smart Finance Tracker</h2>
+
+    <div class="nav-links">
+        <a href="/dashboard">Home</a>
+        <a href="/add-expense">Add Expense</a>
+        <a href="/add-income">Add Income</a>
+        <a href="/history">History</a>
+    </div>
+
+</div>
+
+    <div class="container">
+
+        <h1>Expense History</h1>
+        <form method="GET" class="search-form">
+
+    <input type="text" name="search" placeholder="Search expense">
+
+    <button type="submit">Search</button>
+
+</form>
+<form method="GET" class="search-form">
+
+    <input type="date" name="from_date">
+
+    <input type="date" name="to_date">
+
+    <button type="submit">
+        Filter
+    </button>
+
+</form>
+
+        <table>
+
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+
+            {% for expense in expenses %}
+
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ expense[1] }}</td>
+                <td>{{ expense[2] }}</td>
+                <td>₹{{ expense[3] }}</td>
+                <td>{{ expense[4] }}</td>
+  <td>
+
+    <a href="/edit/{{ expense[0] }}">
+        <button>Edit</button>
+    </a>
+
+    <a href="/delete/{{ expense[0] }}"
+   onclick="return confirm('Delete this expense?')">
+
+    <button>Delete</button>
+
+</a>
+
+</td>
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+</body>
+</html>
