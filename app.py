@@ -1,19 +1,18 @@
 from flask import Flask, render_template, request, session, redirect, send_file
-import mysql.connector
+import sqlite3
 
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from datetime import date
 
-
 app = Flask(__name__)
 app.secret_key = "smartfinancekey"
 
-connection = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="9788",
-    database="smart_finance_tracker"
+# SQLITE CONNECTION
+
+connection = sqlite3.connect(
+    "database/finance.db",
+    check_same_thread=False
 )
 
 cursor = connection.cursor()
@@ -22,7 +21,6 @@ cursor = connection.cursor()
 
 @app.route("/")
 def main():
-
     return redirect("/login")
 
 # DASHBOARD
@@ -38,7 +36,7 @@ def home():
     expense_query = """
     SELECT SUM(amount)
     FROM expenses
-    WHERE user_id=%s
+    WHERE user_id=?
     """
 
     cursor.execute(
@@ -56,7 +54,7 @@ def home():
     income_query = """
     SELECT SUM(amount)
     FROM user_income
-    WHERE user_id=%s
+    WHERE user_id=?
     """
 
     cursor.execute(
@@ -69,8 +67,6 @@ def home():
     if total_income is None:
         total_income = 0
 
-    # BALANCE
-
     remaining_balance = total_income - total_expense
 
     # PIE CHART
@@ -78,7 +74,7 @@ def home():
     chart_query = """
     SELECT category, SUM(amount)
     FROM expenses
-    WHERE user_id=%s
+    WHERE user_id=?
     GROUP BY category
     """
 
@@ -93,7 +89,6 @@ def home():
     amounts = []
 
     for row in chart_data:
-
         categories.append(row[0])
         amounts.append(float(row[1]))
 
@@ -101,12 +96,12 @@ def home():
 
     monthly_query = """
     SELECT 
-        MONTHNAME(expense_date),
+        strftime('%m', expense_date),
         SUM(amount)
     FROM expenses
-    WHERE user_id=%s
-    GROUP BY MONTH(expense_date), MONTHNAME(expense_date)
-    ORDER BY MONTH(expense_date)
+    WHERE user_id=?
+    GROUP BY strftime('%m', expense_date)
+    ORDER BY strftime('%m', expense_date)
     """
 
     cursor.execute(
@@ -120,7 +115,6 @@ def home():
     monthly_amounts = []
 
     for row in monthly_data:
-
         months.append(row[0])
         monthly_amounts.append(float(row[1]))
 
@@ -136,8 +130,8 @@ def home():
     FROM budgets
     JOIN expenses
     ON budgets.category = expenses.category
-    WHERE budgets.user_id=%s
-    AND expenses.user_id=%s
+    WHERE budgets.user_id=?
+    AND expenses.user_id=?
     GROUP BY budgets.category, budgets.budget_amount
     """
 
@@ -155,16 +149,16 @@ def home():
         spent_amount = float(row[2])
 
         if spent_amount > budget_limit:
-
             warning_messages.append(
                 f"⚠ {category} budget exceeded!"
             )
-                # TOTAL TRANSACTIONS
+
+    # TOTAL TRANSACTIONS
 
     transaction_query = """
     SELECT COUNT(*)
     FROM expenses
-    WHERE user_id=%s
+    WHERE user_id=?
     """
 
     cursor.execute(
@@ -174,12 +168,12 @@ def home():
 
     total_transactions = cursor.fetchone()[0]
 
-    # TOP SPENDING CATEGORY
+    # TOP CATEGORY
 
     top_category_query = """
     SELECT category, SUM(amount) as total
     FROM expenses
-    WHERE user_id=%s
+    WHERE user_id=?
     GROUP BY category
     ORDER BY total DESC
     LIMIT 1
@@ -193,12 +187,9 @@ def home():
     top_category_data = cursor.fetchone()
 
     if top_category_data:
-
         top_category = top_category_data[0]
         top_amount = float(top_category_data[1])
-
     else:
-
         top_category = "None"
         top_amount = 0
 
@@ -225,8 +216,6 @@ def add_expense():
     if "user" not in session:
         return redirect("/login")
 
-    # DEFAULT DATE
-
     if "selected_date" not in session:
         session["selected_date"] = str(date.today())
 
@@ -236,8 +225,6 @@ def add_expense():
         category = request.form["category"]
         amount = request.form["amount"]
         expense_date = request.form["expense_date"]
-
-        # SAVE DATE IN SESSION
 
         session["selected_date"] = expense_date
 
@@ -251,7 +238,7 @@ def add_expense():
             expense_date,
             user_id
         )
-        VALUES(%s, %s, %s, %s, %s)
+        VALUES(?, ?, ?, ?, ?)
         """
 
         values = (
@@ -276,6 +263,7 @@ def add_expense():
         "add_expense.html",
         selected_date=session["selected_date"]
     )
+
 # HISTORY
 
 @app.route("/history")
@@ -289,14 +277,12 @@ def history():
     from_date = request.args.get("from_date")
     to_date = request.args.get("to_date")
 
-    # DATE FILTER
-
     if from_date and to_date:
 
         query = """
         SELECT * FROM expenses
-        WHERE user_id=%s
-        AND expense_date BETWEEN %s AND %s
+        WHERE user_id=?
+        AND expense_date BETWEEN ? AND ?
         """
 
         cursor.execute(
@@ -308,16 +294,14 @@ def history():
             )
         )
 
-    # SEARCH FILTER
-
     elif search:
 
         query = """
         SELECT * FROM expenses
-        WHERE user_id=%s
+        WHERE user_id=?
         AND (
-            title LIKE %s
-            OR category LIKE %s
+            title LIKE ?
+            OR category LIKE ?
         )
         """
 
@@ -332,13 +316,11 @@ def history():
             )
         )
 
-    # NORMAL HISTORY
-
     else:
 
         query = """
         SELECT * FROM expenses
-        WHERE user_id=%s
+        WHERE user_id=?
         """
 
         cursor.execute(
@@ -352,12 +334,13 @@ def history():
         "history.html",
         expenses=expenses
     )
-# DELETE EXPENSE
+
+# DELETE
 
 @app.route("/delete/<int:id>")
 def delete_expense(id):
 
-    query = "DELETE FROM expenses WHERE id=%s"
+    query = "DELETE FROM expenses WHERE id=?"
 
     cursor.execute(query, (id,))
 
@@ -388,7 +371,7 @@ def add_income():
             income_date,
             user_id
         )
-        VALUES(%s, %s, %s, %s)
+        VALUES(?, ?, ?, ?)
         """
 
         values = (
@@ -420,11 +403,11 @@ def edit_expense(id):
 
         update_query = """
         UPDATE expenses
-        SET title=%s,
-            category=%s,
-            amount=%s,
-            expense_date=%s
-        WHERE id=%s
+        SET title=?,
+            category=?,
+            amount=?,
+            expense_date=?
+        WHERE id=?
         """
 
         values = (
@@ -443,7 +426,7 @@ def edit_expense(id):
 
     select_query = """
     SELECT * FROM expenses
-    WHERE id=%s
+    WHERE id=?
     """
 
     cursor.execute(select_query, (id,))
@@ -465,18 +448,14 @@ def register():
         username = request.form["username"]
         password = request.form["password"]
 
-        # CHECK EXISTING USERNAME
-
         check_query = """
         SELECT * FROM users
-        WHERE username=%s
+        WHERE username=?
         """
 
         cursor.execute(check_query, (username,))
 
         existing_user = cursor.fetchone()
-
-        # IF USERNAME EXISTS
 
         if existing_user:
 
@@ -485,11 +464,9 @@ def register():
                 error="Username already exists!"
             )
 
-        # INSERT NEW USER
-
         query = """
         INSERT INTO users(username, password)
-        VALUES(%s, %s)
+        VALUES(?, ?)
         """
 
         values = (username, password)
@@ -514,8 +491,8 @@ def login():
 
         query = """
         SELECT * FROM users
-        WHERE username=%s
-        AND password=%s
+        WHERE username=?
+        AND password=?
         """
 
         values = (username, password)
@@ -534,9 +511,9 @@ def login():
         else:
 
             return render_template(
-    "login.html",
-    error="Invalid Username or Password"
-)
+                "login.html",
+                error="Invalid Username or Password"
+            )
 
     return render_template("login.html")
 
@@ -569,7 +546,7 @@ def add_budget():
             budget_amount,
             user_id
         )
-        VALUES(%s, %s, %s)
+        VALUES(?, ?, ?)
         """
 
         values = (
@@ -597,7 +574,7 @@ def download_report():
     query = """
     SELECT title, category, amount, expense_date
     FROM expenses
-    WHERE user_id=%s
+    WHERE user_id=?
     """
 
     cursor.execute(
