@@ -16,6 +16,47 @@ connection = sqlite3.connect(
 )
 
 cursor = connection.cursor()
+# CREATE TABLES
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    password TEXT
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS expenses(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    category TEXT,
+    amount REAL,
+    expense_date TEXT,
+    user_id INTEGER
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS user_income(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source TEXT,
+    amount REAL,
+    income_date TEXT,
+    user_id INTEGER
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS budgets(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT,
+    budget_amount REAL,
+    user_id INTEGER
+)
+""")
+
+connection.commit()
 
 # ALWAYS OPEN LOGIN PAGE FIRST
 
